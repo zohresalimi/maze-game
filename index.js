@@ -1,23 +1,26 @@
 const { Engine, Render, Runner, World, Bodies, Body, Events } = Matter;
 
 
-const width = window.innerWidth;
-const height = window.innerHeight
-const cellsHorizontal = 15;
-const cellsVertival = 15
+const width = 600;
+const height = 600;
+const cellsHorizontal = 6;
+const cellsVertival = 6;
 const unitLengthX = width / cellsHorizontal;
 const unitLengthY = width / cellsVertival;
+const container = document.querySelector('.container')
+let current;
+const stack = []
 
 const engine = Engine.create();
 engine.world.gravity.y = 0
 const { world } = engine;
 const render = Render.create({
-    element: document.body,
+    element: container,
     engine: engine,
     options: {
         wireframes: true,
-        width: width - 3.5,
-        height: height - 3.5
+        width: width,
+        height: height
     }
 });
 Render.run(render);
@@ -31,6 +34,7 @@ const walls = [
     Bodies.rectangle(width, height / 2, 2, height, { isStatic: true })
 ];
 World.add(world, walls);
+
 
 const grid = Array(cellsVertival).fill(null).map(() => Array(cellsHorizontal).fill(false))
 const verticals = Array(cellsVertival).fill(null).map(() => Array(cellsHorizontal - 1).fill(false))
@@ -52,12 +56,15 @@ const shuffle = (arr) => {
 }
 
 const stepThroughCell = (row, column) => {
-    // If i have visted the cell at [row, column], then return
+    // If i have visted the cell at [row][column], then return
     if (grid[row][column]) {
         return
     }
-    // Mark this cell as being visited
     grid[row][column] = true
+
+    current = [row, column]
+
+    // Mark this cell as being visited
     // Assemble randomly-ordered list of neighbors
     const neighbors = shuffle([
         [row - 1, column, 'up'],
@@ -66,6 +73,7 @@ const stepThroughCell = (row, column) => {
         [row, column - 1, 'left']
     ])
 
+    let foundCorrectNeighbour = false
     // For each neighbor....
     for (let neighbor of neighbors) {
         const [nextRow, nextColumn, direction] = neighbor
@@ -77,6 +85,8 @@ const stepThroughCell = (row, column) => {
         if (grid[nextRow][nextColumn]) {
             continue
         }
+        stack.push(current)
+        foundCorrectNeighbour = true
         // Remove a wall from either horizontals or verticals
         if (direction === 'left') {
             verticals[row][column - 1] = true
@@ -89,6 +99,11 @@ const stepThroughCell = (row, column) => {
         }
         // Visit that next cell
         stepThroughCell(nextRow, nextColumn)
+    }
+
+    if (!foundCorrectNeighbour) {
+        const [row, column] = stack.pop()
+        stepThroughCell(row, column)
     }
 };
 
@@ -164,19 +179,19 @@ document.addEventListener('keydown', (event) => {
     const { x, y } = ball.velocity
     if (event.keyCode === 38) {
         //up
-        Body.setVelocity(ball, { x, y: y - 5 })
+        Body.setVelocity(ball, { x, y: y - 3 })
     }
     if (event.keyCode === 39) {
         //right
-        Body.setVelocity(ball, { x: x + 5, y })
+        Body.setVelocity(ball, { x: x + 3, y })
     }
     if (event.keyCode === 40) {
         //down
-        Body.setVelocity(ball, { x, y: y + 5 })
+        Body.setVelocity(ball, { x, y: y + 3 })
     }
     if (event.keyCode === 37) {
         //left
-        Body.setVelocity(ball, { x: x - 5, y })
+        Body.setVelocity(ball, { x: x - 3, y })
     }
 })
 
